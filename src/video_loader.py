@@ -44,12 +44,15 @@ def apply_note_threshold(fretboard: np.ndarray, note_hue: int) -> np.ndarray:
 
 
 def main():
+    cv2.namedWindow('Guitar Hero 2')
     cap = load_video(DEFAULT_VIDEO_PATH)
+    cv2.createTrackbar('H', 'Guitar Hero 2', 0, 255, print)
     while cap.grab():
         _, frame = cap.retrieve()
 
         fretboard = crop_fretboard(frame)
-        notes = apply_note_threshold(fretboard, hsv_green)
+        hue = cv2.getTrackbarPos('H', 'Guitar Hero 2')
+        notes = apply_note_threshold(fretboard, hue)
 
         cv2.imshow('Guitar Hero 2', notes)
         if cv2.waitKey(33) & 0xFF == ord('q'):
