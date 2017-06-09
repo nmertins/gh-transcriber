@@ -52,11 +52,11 @@ def nothing(val):
 def setup_slider_controls():
     cv2.namedWindow('HSV Controls')
     cv2.createTrackbar('Hue', 'HSV Controls', 0, 255, nothing)
-    cv2.createTrackbar('Hue Offset', 'HSV Controls', 0, 20, nothing)
-    cv2.createTrackbar('Saturation Lower', 'HSV Controls', 0, 255, nothing)
-    cv2.createTrackbar('Saturation Upper', 'HSV Controls', 0, 255, nothing)
-    cv2.createTrackbar('Brightness Lower', 'HSV Controls', 0, 255, nothing)
-    cv2.createTrackbar('Brightness Upper', 'HSV Controls', 0, 255, nothing)
+    cv2.createTrackbar('Hue Offset', 'HSV Controls', 10, 20, nothing)
+    cv2.createTrackbar('Saturation Lower', 'HSV Controls', 100, 255, nothing)
+    cv2.createTrackbar('Saturation Upper', 'HSV Controls', 255, 255, nothing)
+    cv2.createTrackbar('Brightness Lower', 'HSV Controls', 100, 255, nothing)
+    cv2.createTrackbar('Brightness Upper', 'HSV Controls', 255, 255, nothing)
 
 
 def main():
