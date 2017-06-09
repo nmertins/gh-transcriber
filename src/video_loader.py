@@ -4,14 +4,6 @@ import numpy as np
 
 DEFAULT_VIDEO_PATH = './../resources/gh-ps2-gameplay-trimmed.mp4'
 
-hsv_green = 25  # np.array([25, 183, 27])
-hsv_red = 211  # np.array([211, 65, 56])
-hsv_yellow = 194  # np.array([194, 203, 42])
-hsv_blue = 33  # np.array([33, 129, 213])
-hsv_orange = 184  # np.array([184, 95, 18])
-
-hue_offset = 10
-
 
 def load_video(filepath: str) -> cv2.VideoCapture:
     cap = cv2.VideoCapture()
@@ -34,25 +26,55 @@ def crop_fretboard(gameplay_image: np.ndarray) -> np.ndarray:
     return cropped_grayscale
 
 
-def apply_note_threshold(fretboard: np.ndarray, note_hue: int) -> np.ndarray:
+def apply_note_threshold(fretboard: np.ndarray, hue: int, hue_offset: int, saturation_lower: int, saturation_upper: int,
+                         brightness_lower: int, brightness_upper: int) -> np.ndarray:
     hsv = cv2.cvtColor(fretboard, cv2.COLOR_BGR2HSV)
 
-    mask = cv2.inRange(hsv, np.array([note_hue - hue_offset, 100, 100]), np.array([note_hue + hue_offset, 255, 255]))
+    lower_bound = np.array([hue - hue_offset,
+                            saturation_lower,
+                            brightness_lower])
+    np.clip(lower_bound, 0, 255, out=lower_bound)
+    upper_bound = np.array([hue + hue_offset,
+                            saturation_upper,
+                            brightness_upper])
+    np.clip(upper_bound, 0, 255, out=upper_bound)
+
+    mask = cv2.inRange(hsv, lower_bound, upper_bound)
     res = cv2.bitwise_and(fretboard, fretboard, mask=mask)
 
     return res
 
 
+def nothing(val):
+    pass
+
+
+def setup_slider_controls():
+    cv2.namedWindow('HSV Controls')
+    cv2.createTrackbar('Hue', 'HSV Controls', 0, 255, nothing)
+    cv2.createTrackbar('Hue Offset', 'HSV Controls', 0, 20, nothing)
+    cv2.createTrackbar('Saturation Lower', 'HSV Controls', 0, 255, nothing)
+    cv2.createTrackbar('Saturation Upper', 'HSV Controls', 0, 255, nothing)
+    cv2.createTrackbar('Brightness Lower', 'HSV Controls', 0, 255, nothing)
+    cv2.createTrackbar('Brightness Upper', 'HSV Controls', 0, 255, nothing)
+
+
 def main():
-    cv2.namedWindow('Guitar Hero 2')
+    setup_slider_controls()
     cap = load_video(DEFAULT_VIDEO_PATH)
-    cv2.createTrackbar('H', 'Guitar Hero 2', 0, 255, print)
     while cap.grab():
         _, frame = cap.retrieve()
 
         fretboard = crop_fretboard(frame)
-        hue = cv2.getTrackbarPos('H', 'Guitar Hero 2')
-        notes = apply_note_threshold(fretboard, hue)
+        hue = cv2.getTrackbarPos('Hue', 'HSV Controls')
+        hue_offset = cv2.getTrackbarPos('Hue Offset', 'HSV Controls')
+        saturation_lower = cv2.getTrackbarPos('Saturation Lower', 'HSV Controls')
+        saturation_upper = cv2.getTrackbarPos('Saturation Upper', 'HSV Controls')
+        brightness_lower = cv2.getTrackbarPos('Brightness Lower', 'HSV Controls')
+        brightness_upper = cv2.getTrackbarPos('Brightness Upper', 'HSV Controls')
+        notes = apply_note_threshold(fretboard, hue, hue_offset,
+                                     saturation_lower, saturation_upper,
+                                     brightness_lower, brightness_upper)
 
         cv2.imshow('Guitar Hero 2', notes)
         if cv2.waitKey(33) & 0xFF == ord('q'):
