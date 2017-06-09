@@ -3,6 +3,13 @@ import cv2
 import numpy as np
 
 DEFAULT_VIDEO_PATH = './../resources/gh-ps2-gameplay-trimmed.mp4'
+SLIDER_WINDOW_NAME = 'HSV Controls'
+HUE_SLIDER_NAME = 'Hue'
+HUE_OFFSET_SLIDER_NAME = 'Hue Offset'
+SATURATION_LOWER_SLIDER_NAME = 'Saturation Lower'
+SATURATION_UPPER_SLIDER_NAME = 'Saturation Upper'
+BRIGHTNESS_LOWER_SLIDER_NAME = 'Brightness Lower'
+BRIGHTNESS_UPPER_SLIDER_NAME = 'Brightness Upper'
 
 
 def load_video(filepath: str) -> cv2.VideoCapture:
@@ -26,17 +33,10 @@ def crop_fretboard(gameplay_image: np.ndarray) -> np.ndarray:
     return cropped_grayscale
 
 
-def apply_note_threshold(fretboard: np.ndarray, hue: int, hue_offset: int, saturation_lower: int, saturation_upper: int,
-                         brightness_lower: int, brightness_upper: int) -> np.ndarray:
+def apply_note_threshold(fretboard: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray) -> np.ndarray:
     hsv = cv2.cvtColor(fretboard, cv2.COLOR_BGR2HSV)
 
-    lower_bound = np.array([hue - hue_offset,
-                            saturation_lower,
-                            brightness_lower])
     np.clip(lower_bound, 0, 255, out=lower_bound)
-    upper_bound = np.array([hue + hue_offset,
-                            saturation_upper,
-                            brightness_upper])
     np.clip(upper_bound, 0, 255, out=upper_bound)
 
     mask = cv2.inRange(hsv, lower_bound, upper_bound)
@@ -50,13 +50,32 @@ def nothing(val):
 
 
 def setup_slider_controls():
-    cv2.namedWindow('HSV Controls')
-    cv2.createTrackbar('Hue', 'HSV Controls', 0, 255, nothing)
-    cv2.createTrackbar('Hue Offset', 'HSV Controls', 10, 20, nothing)
-    cv2.createTrackbar('Saturation Lower', 'HSV Controls', 100, 255, nothing)
-    cv2.createTrackbar('Saturation Upper', 'HSV Controls', 255, 255, nothing)
-    cv2.createTrackbar('Brightness Lower', 'HSV Controls', 100, 255, nothing)
-    cv2.createTrackbar('Brightness Upper', 'HSV Controls', 255, 255, nothing)
+    cv2.namedWindow(SLIDER_WINDOW_NAME)
+    cv2.resizeWindow(SLIDER_WINDOW_NAME, 600, 200)
+    cv2.createTrackbar(HUE_SLIDER_NAME, SLIDER_WINDOW_NAME, 0, 255, nothing)
+    cv2.createTrackbar(HUE_OFFSET_SLIDER_NAME, SLIDER_WINDOW_NAME, 10, 20, nothing)
+    cv2.createTrackbar(SATURATION_LOWER_SLIDER_NAME, SLIDER_WINDOW_NAME, 100, 255, nothing)
+    cv2.createTrackbar(SATURATION_UPPER_SLIDER_NAME, SLIDER_WINDOW_NAME, 255, 255, nothing)
+    cv2.createTrackbar(BRIGHTNESS_LOWER_SLIDER_NAME, SLIDER_WINDOW_NAME, 100, 255, nothing)
+    cv2.createTrackbar(BRIGHTNESS_UPPER_SLIDER_NAME, SLIDER_WINDOW_NAME, 255, 255, nothing)
+
+
+def read_sliders():
+    hue = cv2.getTrackbarPos(HUE_SLIDER_NAME, SLIDER_WINDOW_NAME)
+    hue_offset = cv2.getTrackbarPos(HUE_OFFSET_SLIDER_NAME, SLIDER_WINDOW_NAME)
+    saturation_lower = cv2.getTrackbarPos(SATURATION_LOWER_SLIDER_NAME, SLIDER_WINDOW_NAME)
+    saturation_upper = cv2.getTrackbarPos(SATURATION_UPPER_SLIDER_NAME, SLIDER_WINDOW_NAME)
+    brightness_lower = cv2.getTrackbarPos(BRIGHTNESS_LOWER_SLIDER_NAME, SLIDER_WINDOW_NAME)
+    brightness_upper = cv2.getTrackbarPos(BRIGHTNESS_UPPER_SLIDER_NAME, SLIDER_WINDOW_NAME)
+
+    lower_bound = np.array([hue - hue_offset,
+                            saturation_lower,
+                            brightness_lower])
+    upper_bound = np.array([hue + hue_offset,
+                            saturation_upper,
+                            brightness_upper])
+
+    return lower_bound, upper_bound
 
 
 def main():
@@ -66,15 +85,10 @@ def main():
         _, frame = cap.retrieve()
 
         fretboard = crop_fretboard(frame)
-        hue = cv2.getTrackbarPos('Hue', 'HSV Controls')
-        hue_offset = cv2.getTrackbarPos('Hue Offset', 'HSV Controls')
-        saturation_lower = cv2.getTrackbarPos('Saturation Lower', 'HSV Controls')
-        saturation_upper = cv2.getTrackbarPos('Saturation Upper', 'HSV Controls')
-        brightness_lower = cv2.getTrackbarPos('Brightness Lower', 'HSV Controls')
-        brightness_upper = cv2.getTrackbarPos('Brightness Upper', 'HSV Controls')
-        notes = apply_note_threshold(fretboard, hue, hue_offset,
-                                     saturation_lower, saturation_upper,
-                                     brightness_lower, brightness_upper)
+
+        lower_bound, upper_bound = read_sliders()
+
+        notes = apply_note_threshold(fretboard, lower_bound, upper_bound)
 
         cv2.imshow('Guitar Hero 2', notes)
         if cv2.waitKey(33) & 0xFF == ord('q'):
