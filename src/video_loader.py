@@ -36,9 +36,9 @@ def crop_fretboard(gameplay_image: np.ndarray) -> np.ndarray:
     start_col = int(0.25 * cols)
     end_col = int(0.75 * cols)
 
-    cropped_grayscale = gameplay_image[start_row:end_row, start_col:end_col]
+    cropped_video = gameplay_image[start_row:end_row, start_col:end_col]
 
-    return cropped_grayscale
+    return cropped_video
 
 
 def apply_note_threshold(fretboard: np.ndarray, lower_bound: np.ndarray, upper_bound: np.ndarray) -> np.ndarray:
@@ -118,21 +118,24 @@ def print_variable_values() -> None:
 def main() -> int:
     setup_slider_controls()
     cap = load_video(DEFAULT_VIDEO_PATH)
-    while cap.grab():
-        _, frame = cap.retrieve()
+    grab_new_frame = True
+    while True:
+        if grab_new_frame:
+            cap.grab()
+            _, frame = cap.retrieve()
 
         fretboard = crop_fretboard(frame)
 
         lower_bound, upper_bound = get_bounds()
-
         notes = apply_note_threshold(fretboard, lower_bound, upper_bound)
 
-        cv2.imshow('Guitar Hero 2', notes)
+        cv2.imshow('HSV View', notes)
+        cv2.imshow('Guitar Hero 2', fretboard)
 
         wait_key = cv2.waitKey(33) & 0xFF
 
         if wait_key == ord('p'):
-            print_variable_values()
+            grab_new_frame = not grab_new_frame
 
         if wait_key == ord('q'):
             break
