@@ -135,6 +135,9 @@ def main() -> int:
         wait_key = cv2.waitKey(33) & 0xFF
 
         if wait_key == ord('p'):
+            print_variable_values()
+
+        if wait_key == ord(' '):
             grab_new_frame = not grab_new_frame
 
         if wait_key == ord('q'):
